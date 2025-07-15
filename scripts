@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# LeetCode API Docker Setup Script
+echo "🚀 Setting up LeetCode API Docker container..."
+
+# Check if Docker is running
+if ! docker info > /dev/null 2>&1; then
+    echo "❌ Docker is not running. Please start Docker and try again."
+    exit 1
+fi
+
+# Create logs directory if it doesn't exist
+mkdir -p logs
+
+# Build and run the container
+echo "📦 Building Docker image..."
+docker-compose -f docker-compose.leetcode-api.yml build
+
+if [ $? -eq 0 ]; then
+    echo "✅ Build successful!"
+    
+    echo "🚀 Starting LeetCode API container..."
+    docker-compose -f docker-compose.leetcode-api.yml up -d
+    
+    if [ $? -eq 0 ]; then
+        echo "✅ Container started successfully!"
+        echo ""
+        echo "📊 Container status:"
+        docker-compose -f docker-compose.leetcode-api.yml ps
+        
+        echo ""
+        echo "🔍 Checking if API is responding..."
+        sleep 5
+        
+        # Test the API
+        if curl -f http://localhost:3000/daily > /dev/null 2>&1; then
+            echo "✅ API is responding correctly!"
+            echo ""
+            echo "🎉 Setup complete! Your LeetCode API is running at:"
+            echo "   http://localhost:3000"
+            echo ""
+            echo "📝 Next steps:"
+            echo "   1. Update src/lib/config.ts in your LeetStreak app:"
+            echo "      BASE_URL: 'http://localhost:3000'"
+            echo "   2. Test the connection with: node scripts/test-api.js"
+            echo "   3. Start your LeetStreak app: npm run dev"
+        else
+            echo "⚠️  API might still be starting up. Please wait a moment and try again."
+            echo "   You can check the logs with: docker-compose -f docker-compose.leetcode-api.yml logs"
+        fi
+    else
+        echo "❌ Failed to start container"
+        exit 1
+    fi
+else
+    echo "❌ Build failed"
+    exit 1
+fi 
